@@ -1,38 +1,24 @@
 const request = require('request-promise-native');
 
-const fetchMyIP = () => {
+const fetchMyIP = function() {
   return request('https://api.ipify.org?format=json');
 };
 
-const fetchCoordsByIP = (body) => {
+const fetchMyCoordsByIP = body => {
   const ip = JSON.parse(body).ip;
-  return request(`https://ipvigilante.com/${ip}`);
+  return request(`http://ipwho.is/${ip}`);
 };
-
-const fetchISSFlyOverTimes = function(body) {
-  const { latitude, longitude } = JSON.parse(body).data;
-  const url = `http://api.open-notify.org/iss-pass.json?lat=${latitude}&lon=${longitude}`;
-  return request(url);
+const fetchISSFlyOverTimes = coords => {
+  const latitude = JSON.parse(coords).latitude;
+  const longitude = JSON.parse(coords).longitude;
+  return request(`https://iss-flyover.herokuapp.com/json/?lat=${latitude}&lon=${longitude}`);
 };
 
 const nextISSTimesForMyLocation = function() {
   return fetchMyIP()
-    .then(fetchCoordsByIP)
+    .then(fetchMyCoordsByIP)
     .then(fetchISSFlyOverTimes)
-    .then((data) => {
-      const { response } = JSON.parse(data);
-      return response;
-    });
+    .then(JSON.parse)
+    .then(data => data.response);
 };
-
-const printPassTimes = function(passTimes) {
-  for (const pass of passTimes) {
-    const datetime = new Date(0);
-    datetime.setUTCSeconds(pass.risetime);
-    const duration = pass.duration;
-    console.log(`Next pass at ${datetime} for ${duration} seconds!`);
-  }
-};
-
-
-module.exports = { nextISSTimesForMyLocation, printPassTimes };
+module.exports = { nextISSTimesForMyLocation};
